@@ -1,0 +1,41 @@
+select * from botdb.dialog.activity_message am  --Diyalog Mesajlarının içeriklerini gösteriyor. 
+select * from botdb.dialog.activity_message_detail amd  -- Diyalog Mesajlarının içerik detaylarını gösteriyor. 
+select * from botdb.dialog.application a --Şu anda kullanılan Chatbotlar. Running(çalışıyor), Cancelled(İptal edildi),Stopped(Durduruldu)
+select * from botdb.dialog.conversation c --Sorulacak
+select * from botdb.dialog.log_error le --Mesaj detayına göre alınan hataları logluyor. 
+select * from botdb.dialog.intend i 
+where i.application_id = 3 --ana intentler, örneğin doğuş oto için baktım.
+
+
+select i.name_tr as AnaIntent, ip.name_tr ParametreIntent  from botdb.dialog.intend i 
+inner join botdb.dialog.intend_param ip  on i.id  = ip.intend_id 
+where i.application_id  = 3
+
+select * from botdb.dialog.reference_type rt --Referans tipleri
+
+select * from botdb.dialog."session" s  -- sessions
+
+select * from botdb.dialog."user" u 
+order by u.id  desc  -- kullanıcılar tanılmanıyor
+
+select * from botdb.dialog."vQueryPrice" vqp --Sorulacak.
+
+select * from botdb.dialog.api_call ac --Apiler tanımlanmış
+
+select * from botdb.dialog.vconversationsummary v --Sorulacak
+
+select * from botdb.dialog.vappointmentrate v -- Sorulacak
+
+select * from botdb.dialog.vappointmentfaildetail v -- Sanırım cevaplardan yanlış cevap dönerse saatine göre burada tutuluyor(detayı)
+
+select * from botdb.dialog.vappointmentfailquestion v --Sorulan ve hata almış soruların detayı var
+
+select * from botdb.dialog.menu m --Menuler burada yer alıyor paneldeki.
+
+select * from public.doto_vehicle dv --araçlar burada
+
+select * from botdb.dialog.menu_auth ma  --menu yetkileri , menu_id dialog.menu, user id ise users bölümünde yer alıyor. 
+
+select * from botdb.dialog.message_log ml 
+order by id  desc -- dialog mesaj logları ( sorulacak.)
+
