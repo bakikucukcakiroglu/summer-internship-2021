@@ -1,0 +1,475 @@
+import React, { Component, useState, useMemo } from 'react';
+import Select from 'react-select';
+import ApiService from '../../services/ApiService';
+import { toast } from 'react-toastify';
+//import './tt.css';
+import MaterialTable from 'material-table';
+import { withStyles } from '@material-ui/styles';
+import {
+    Grid,
+    Typography,
+    Card,
+    CardContent,
+    Divider,
+    Button
+} from '@material-ui/core';
+import Loader from '../../common/Loader';
+import { Row } from 'react-bootstrap';
+
+
+const styles = (theme) => ({
+
+    root: {
+
+        flexGrow: 2,
+        padding: '10px',
+        textAlign: 'center',
+    },
+    button: {
+
+        flexGrow: 2,
+        align: "left"
+    },
+    typography: {
+
+        flexGrow: 1,
+        textAlign: 'left'
+    },
+    formTop: {
+
+        paddingTop: '17px',
+    },
+    dialogPaper: {
+
+        minHeight: '30vh',
+        maxHeight: '50vh',
+    },
+    palette: {
+
+        primary: '#ff1744',
+        secondary: '#2196f3',
+    },
+    color: {
+
+        color: '#FF935C',
+    },
+    formControl: {
+
+        marginTop: theme.spacing(2),
+        minWidth: 550,
+    },
+    formControlLabel: {
+
+        marginTop: theme.spacing(1),
+    }
+});
+
+let tempTable = [];
+
+class Train extends React.Component {
+
+    constructor(props) {
+
+        super(props);
+        this.state = {
+
+            applicationNames: [],
+            status: "",
+            applicationName:"",
+            turkishApplicationName:"",
+            id: "",
+            selectedRow: [],
+            tableDatas: [],
+            load: false,
+        };
+        this.apiService = new ApiService();
+
+    }
+
+    async getApplications() {
+
+        this.setState({ load: true });
+        this.apiService.getAllApplications()
+            .then((response) => {
+
+                //tempTable = response.data;
+
+                tempTable= response.data.sort((a, b) => a.id - b.id)
+
+                this.state.load = false
+        
+                this.setState({
+
+                    tableDatas: tempTable
+                })
+                
+            })
+            .catch((error) => {
+
+                console.log(error)
+            });
+    }
+
+
+    componentDidMount() {
+
+        this.getApplications();
+     
+    }
+
+    async addApplication(applicationName, status, turkishApplicationName) {
+
+        this.setState({ load: true });
+        let data = {
+
+            ApplicationName:this.state.applicationName,
+            Status: this.state.status,
+            TurkishApplicationName: this.state.turkishApplicationName,
+        }
+        let response = await this.apiService.createApplication(data);
+
+        if (response.status === 200) {
+
+            toast.success('Başarı ile eklendi.', {
+                position: toast.POSITION.TOP_CENTER,
+                hideProgressBar: true
+            });
+            this.setState({ load: false });
+            this.getApplications();
+
+        } else {
+
+            toast.error('Ekleme sırasında hata oluştu. Tekrar deneyiniz.', {
+                position: toast.POSITION.TOP_CENTER,
+                hideProgressBar: true
+            });
+            this.setState({ load: false });
+        }
+    }
+
+
+    async editApplication(id, turkishApplicationName, status) {
+
+        this.setState({ load: true });
+
+        let data = {
+
+            Id: id,
+            TurkishApplicationName: turkishApplicationName,
+            Status: status,
+        }
+
+        let response = await this.apiService.editApplication(data);
+
+        if (response.status === 200) {
+
+            toast.success('Başarı ile güncellendi.', {
+                position: toast.POSITION.TOP_CENTER,
+                hideProgressBar: true
+            });
+            this.getApplications();
+            this.setState({ load: false });
+        } else {
+
+            toast.error('Güncelleme sırasında hata oluştu. Tekrar deneyiniz.', {
+                position: toast.POSITION.TOP_CENTER,
+                hideProgressBar: true
+            });
+            this.setState({ load: false });
+        }
+    }
+
+
+   /* async deleteApplication(id) {
+
+        this.setState({ load: true });
+
+        let response = await this.apiService.deleteApplication(id);
+
+        if (response != null) {
+
+            toast.success('Kayıt silindi.', {
+                position: toast.POSITION.TOP_CENTER,
+                hideProgressBar: true
+            });
+            this.getApplications();
+            this.setState({ load: false });
+        } else {
+
+            toast.success('Kayıt silinirken hata oluştu. Lütfen tekrar deneyiniz', {
+                position: toast.POSITION.TOP_CENTER,
+                hideProgressBar: true
+            });
+            this.setState({ load: false });
+        }
+    };*/
+
+    render() {
+
+        const { classes } = this.props;
+
+        let tempTableDatas = [];
+
+
+        tempTableDatas = this.state.tableDatas.map((parameter) => {
+
+            return {
+
+                applicationId: parameter.id,
+                applicationName: parameter.turkishApplicationName,
+                applicationCode: parameter.applicationName,
+                status: parameter.status
+         
+            };
+        });
+
+
+        const statusOptions = {"created":"Oluştutuldu", "running": "Çalışıyor","failure":"Hatalı", "cancelled":"İptal Edildi", "stopped":"Durduruldu"};
+
+        return (
+
+            <div className={classes.root}>
+        
+                <Grid item lg={12} md={12} xl={12} xs={12} style={{ zIndex: 900 }}>
+                    <Card>
+                        <MaterialTable
+                            tableRef={this.tableRef}
+                            title=" "
+                            columns={[
+                                {
+                                    title: 'NO',
+                                    field: 'applicationId',
+                                    width: "30%",
+                                    editable: "never"
+                                },
+                                {
+                                    title: 'Uygulama Adı',
+                                    field: 'applicationName',
+                                    width: "30%",
+                                },
+                                {
+                                    title: 'Uygulama Kodu',
+                                    field: 'applicationCode',
+                                    width: "30%",
+                                    editable: "onAdd"
+
+                                },
+                                {
+                                    title: 'Durum',
+                                    field: 'status',
+                                    width: "40%",
+                                    lookup: { ...statusOptions },
+    
+                                }
+                            ]}
+                            data={tempTableDatas}
+
+                            options={{
+
+                                addRowPosition: 'first',
+                                exportButton: {
+                                    csv: true,
+                                    pdf: true
+                                },
+                                exportFileName: 'Application Rapor',
+
+
+                                pageSize: 10,
+                                actionsColumnIndex: -1,
+                                selection: false
+                            }}
+
+                            editable={{
+
+                                onRowAdd: (newData) =>
+                                    new Promise((resolve, reject) => {
+                                        setTimeout(() => {
+                                            {
+                                                this.setState({
+
+                                                    turkishApplicationName: newData.applicationName,
+                                                    applicationName: newData.applicationCode,
+                                                    status: newData.status
+
+                                                });
+
+                                                if (this.state.applicationName != null) {
+                                                    if (this.state.turkishApplicationName != null) {
+
+                                                        if(this.state.status!=null){
+
+                                                            this.addApplication(this.state.applicationName, this.state.status, this.state.turkishApplicationName);
+
+                                                        }else{
+
+                                                            toast.error('Durum alanı boş bırakılamaz!', {
+                                                                position: toast.POSITION.TOP_CENTER,
+                                                                hideProgressBar: true
+                                                            });
+                                                        }
+                                                
+
+                                                    } else {
+
+                                                        if(this.state.status!=null){
+
+                                                            toast.error('Uygulama adı alanı boş bırakılamaz!', {
+                                                                position: toast.POSITION.TOP_CENTER,
+                                                                hideProgressBar: true
+                                                            });
+
+
+                                                        }else{
+
+                                                            toast.error('Uygulama adı ve durum alanları boş bırakılamaz!', {
+                                                                position: toast.POSITION.TOP_CENTER,
+                                                                hideProgressBar: true
+                                                            });
+                                                        }
+                                                        
+                                                    }
+                                                } else {
+
+
+                                                   if (this.state.turkishApplicationName == null) {
+
+
+                                                        if(this.state.status!=null){
+
+                                                            toast.error('Uygulama adı ve uygulama kodu alanları boş bırakılamaz!', {
+                                                                position: toast.POSITION.TOP_CENTER,
+                                                                hideProgressBar: true
+                                                            });
+
+
+                                                        }else{
+
+                                                            toast.error('Uygulama adı, uygulama kodu ve durum alanları boş bırakılamaz!', {
+                                                                position: toast.POSITION.TOP_CENTER,
+                                                                hideProgressBar: true
+                                                            });
+                                                        }
+                                                        
+
+                                                    } else {
+
+                                                        if(this.state.status!=null){
+
+                                                            toast.error('Uygulama kodu alanı boş bırakılamaz!', {
+                                                                position: toast.POSITION.TOP_CENTER,
+                                                                hideProgressBar: true
+                                                            });
+
+
+                                                        }else{
+
+                                                            toast.error('Uygulama kodu ve durum alanları boş bırakılamaz!', {
+                                                                position: toast.POSITION.TOP_CENTER,
+                                                                hideProgressBar: true
+                                                            });
+                                                        }
+                                                     
+                                                    }
+                                                }
+
+        
+                                                this.setState(() => resolve());
+                                            }
+                                            resolve();
+                                        }, 1000);
+                                    }),
+
+                                onRowUpdate: (newData, oldData) =>
+                                    new Promise((resolve, reject) => {
+                                        setTimeout(() => {
+                                            {
+                                                this.setState({
+                                                    id: oldData.applicationId,
+                                                    turkishApplicationName:newData.applicationName,
+                                                    status:newData.status
+
+                                                });
+
+                                                if(this.state.turkishApplicationName!=""){
+
+                                                        this.editApplication(this.state.id, this.state.turkishApplicationName, this.state.status);
+
+                                                }else{
+
+                                                        toast.error('Uygulama adı alanı boş bırakılamaz!', {
+                                                            position: toast.POSITION.TOP_CENTER,
+                                                            hideProgressBar: true
+                                                        });
+                                                }
+
+
+
+
+                                                this.setState(() => resolve());
+                                            }
+                                            resolve();
+                                        }, 1000);
+                                    }),
+
+                                /*onRowDelete: (oldData) =>
+                                    new Promise((resolve, reject) => {
+                                        setTimeout(() => {
+                                            {          
+                                                this.setState({
+
+                                                    id:oldData.applicationId
+
+                                                });                           
+                                                
+                                                this.deleteApplication(this.state.id);
+                                                this.setState( () => resolve());
+                                            }
+                                            resolve();
+                                        }, 1000);
+                                    }),*/
+                            }}
+
+                            localization={{
+                                body: {
+
+                                    emptyDataSourceMessage: 'Gösterilecek kayıt yok.',
+                                    editRow: {
+                                        deleteText: 'Kaydı silmek istediğinize emin misiniz?',
+                                        saveTooltip: 'Kaydet',
+                                        cancelTooltip: 'İptal',
+                                    },
+                                    editTooltip: 'Değiştir',
+                                    deleteTooltip: 'Sil',
+                                    addTooltip: 'Ekle'
+                                },
+                                toolbar: {
+
+                                    searchTooltip: 'Arama',
+                                    searchPlaceholder: 'Arama',
+                                },
+                                header: {
+
+                                    actions: 'Düzenleme',
+                                },
+                                pagination: {
+
+                                    labelRowsSelect: 'satır',
+                                    labelDisplayedRows: '{count} satırdan {from}-{to} arası',
+                                    firstTooltip: 'İlk Sayfa',
+                                    previousTooltip: 'Önceki Sayfa',
+                                    nextTooltip: 'Sonraki Sayfa',
+                                    lastTooltip: 'Son Sayfa',
+                                }
+                            }}
+                        />
+                        <Grid container spacing={16}>
+                        </Grid>
+                    </Card>
+                    {this.state.load && <Loader />}
+                </Grid>
+            </div>
+        );
+    }
+}
+
+export default withStyles(styles)(Train);
